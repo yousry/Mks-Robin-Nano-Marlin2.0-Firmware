@@ -795,9 +795,9 @@
  */
 #define CLASSIC_JERK
 #if ENABLED(CLASSIC_JERK)
-  #define DEFAULT_XJERK 10.0
-  #define DEFAULT_YJERK 10.0
-  #define DEFAULT_ZJERK  0.3
+  #define DEFAULT_XJERK 20.0
+  #define DEFAULT_YJERK 20.0
+  #define DEFAULT_ZJERK  0.4
 
   //#define TRAVEL_EXTRA_XYJERK 0.0     // Additional jerk allowance for all travel moves
 
@@ -828,7 +828,7 @@
  *
  * See https://github.com/synthetos/TinyG/wiki/Jerk-Controlled-Motion-Explained
  */
-//#define S_CURVE_ACCELERATION
+#define S_CURVE_ACCELERATION
 
 //===========================================================================
 //============================= Z Probe Options =============================
@@ -844,7 +844,7 @@
  *
  * Enable this option for a probe connected to the Z Min endstop pin.
  */
-#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
+//#define Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN
 
 /**
  * Z_MIN_PROBE_PIN
@@ -876,8 +876,8 @@
  * Use G29 repeatedly, adjusting the Z height at each point with movement commands
  * or (with LCD_BED_LEVELING) the LCD controller.
  */
-//#define PROBE_MANUALLY
-//#define MANUAL_PROBE_START_Z 0.2
+#define PROBE_MANUALLY
+#define MANUAL_PROBE_START_Z 0
 
 /**
  * A Fix-Mounted Probe either doesn't deploy or needs manual deployment.
@@ -972,7 +972,7 @@
  *
  * Specify a Probe position as { X, Y, Z }
  */
-#define NOZZLE_TO_PROBE_OFFSET { 10, 10, 0 }
+#define NOZZLE_TO_PROBE_OFFSET { 0, 0, 0 }
 
 // Most probes should stay away from the edges of the bed, but
 // with NOZZLE_AS_PROBE this can be negative for a wider probing area.
@@ -1040,7 +1040,7 @@
  * These options are most useful for the BLTouch probe, but may also improve
  * readings with inductive probes and piezo sensors.
  */
-//#define PROBING_HEATERS_OFF       // Turn heaters off when probing
+#define PROBING_HEATERS_OFF       // Turn heaters off when probing
 #if ENABLED(PROBING_HEATERS_OFF)
   //#define WAIT_FOR_BED_HEATER     // Wait for bed to heat back up between probes (to improve accuracy)
 #endif
@@ -1073,7 +1073,7 @@
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
 #define INVERT_X_DIR true
-#define INVERT_Y_DIR false
+#define INVERT_Y_DIR true
 #define INVERT_Z_DIR false
 
 // @section extruder
@@ -1094,10 +1094,10 @@
 
 //#define UNKNOWN_Z_NO_RAISE      // Don't raise Z (lower the bed) if Z is "unknown." For beds that fall when Z is powered off.
 
-//#define Z_HOMING_HEIGHT  4      // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...
+#define Z_HOMING_HEIGHT  2      // (mm) Minimal Z height before homing (G28) for Z clearance above the bed, clamps, ...
                                   // Be sure to have this much clearance over your Z_MAX_POS to prevent grinding.
 
-//#define Z_AFTER_HOMING  10      // (mm) Height to move to after homing Z
+#define Z_AFTER_HOMING  10      // (mm) Height to move to after homing Z
 
 // Direction of endstops when homing; 1=MAX, -1=MIN
 // :[-1,1]
@@ -1108,8 +1108,8 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 200
-#define Y_BED_SIZE 200
+#define X_BED_SIZE 255
+#define Y_BED_SIZE 210
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
@@ -1117,7 +1117,7 @@
 #define Z_MIN_POS 0
 #define X_MAX_POS X_BED_SIZE
 #define Y_MAX_POS Y_BED_SIZE
-#define Z_MAX_POS 200
+#define Z_MAX_POS 210
 
 /**
  * Software Endstops
