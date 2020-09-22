@@ -27,6 +27,8 @@
 #include "wifi_module.h"
 #include "wifi_upload.h"
 
+#if USE_WIFI_FUNCTION
+
 #include "../../../../MarlinCore.h"
 #include "../../../../module/temperature.h"
 #include "../../../../gcode/queue.h"
@@ -293,23 +295,28 @@ void esp_port_begin(uint8_t interrupt) {
 	#endif
 	if(interrupt) {
 		#if USE_WIFI_FUNCTION
-		WIFISERIAL.begin(WIFI_BAUDRATE);
-		uint32_t serial_connect_timeout = millis() + 1000UL;
+			WIFISERIAL.end();
+			for(uint16_t i=0;i<65535;i++);
+			WIFISERIAL.begin(WIFI_BAUDRATE);
+			uint32_t serial_connect_timeout = millis() + 1000UL;
 	    	while (/*!WIFISERIAL && */PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
-		//for(uint8_t i=0;i<100;i++)WIFISERIAL.write(0x33);
+			//for(uint8_t i=0;i<100;i++)WIFISERIAL.write(0x33);
 		#endif
 	}
 	else {
 		#if USE_WIFI_FUNCTION
-		WIFISERIAL.begin(WIFI_UPLOAD_BAUDRATE);
-		uint32_t serial_connect_timeout = millis() + 1000UL;
+			WIFISERIAL.end();
+			for(uint16_t i=0;i<65535;i++);
+			WIFISERIAL.begin(WIFI_UPLOAD_BAUDRATE);
+			uint32_t serial_connect_timeout = millis() + 1000UL;
 	    	while (/*!WIFISERIAL && */PENDING(millis(), serial_connect_timeout)) { /*nada*/ }
-		//for(uint8_t i=0;i<100;i++)WIFISERIAL.write(0x33);
+			//for(uint16_t i=0;i<65535;i++);//WIFISERIAL.write(0x33);
 		#endif
 		dma_init();
 	}
 }
 
+#if USE_WIFI_FUNCTION
 
 int raw_send_to_wifi(char *buf, int len) {
 	int i;
@@ -324,6 +331,8 @@ int raw_send_to_wifi(char *buf, int len) {
 	return len;
 
 }
+
+#endif //USE_WIFI_FUNCTION
 
 void wifi_ret_ack() {}
 
@@ -2049,7 +2058,7 @@ int readWifiBuf(int8_t *buf, int32_t len) {
 	int i = 0 ;
 
 	while(i < len) {
-		if(WIFISERIAL.available()) {
+		if (WIFISERIAL.available()) {
 			buf[i] = WIFISERIAL.read();
 			i++;	
 		}
@@ -2059,6 +2068,8 @@ int readWifiBuf(int8_t *buf, int32_t len) {
 	}
 	return i;
 }
+
+#endif //USE_WIFI_FUNCTION
 
 #endif	// HAS_TFT_LVGL_UI
 

@@ -27,7 +27,9 @@
 #include "draw_ui.h"
 
 #include "../../../../../Configuration.h"
+#include "../../../../MarlinCore.h"
 
+extern lv_group_t * g;
 static lv_obj_t * scr;
 
 #define LV_KB_CTRL_BTN_FLAGS (LV_BTNM_CTRL_NO_REPEAT | LV_BTNM_CTRL_CLICK_TRIG)
@@ -65,11 +67,6 @@ static const lv_btnm_ctrl_t kb_ctrl_spec_map[] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     LV_KB_CTRL_BTN_FLAGS | 2, 2, 6, 2, LV_KB_CTRL_BTN_FLAGS | 2};
 
-static const char * kb_map_num[] = {"1", "2", "3", LV_SYMBOL_CLOSE, "\n",
-                                    "4", "5", "6", LV_SYMBOL_OK, "\n",
-                                    "7", "8", "9", LV_SYMBOL_BACKSPACE, "\n",
-                                    "+/-", "0", ".", LV_SYMBOL_LEFT, LV_SYMBOL_RIGHT, ""};
-
 static const lv_btnm_ctrl_t kb_ctrl_num_map[] = {
         1, 1, 1, LV_KB_CTRL_BTN_FLAGS | 2,
         1, 1, 1, LV_KB_CTRL_BTN_FLAGS | 2,
@@ -77,7 +74,7 @@ static const lv_btnm_ctrl_t kb_ctrl_num_map[] = {
         1, 1, 1, 1, 1};
 
 static void lv_kb_event_cb(lv_obj_t * kb, lv_event_t event) {
-    LV_ASSERT_OBJ(kb, LV_OBJX_NAME);
+    //LV_ASSERT_OBJ(kb, LV_OBJX_NAME);
 
     if(event != LV_EVENT_VALUE_CHANGED) return;
 
@@ -122,43 +119,52 @@ static void lv_kb_event_cb(lv_obj_t * kb, lv_event_t event) {
             const char * ret_ta_txt = lv_ta_get_text(ext->ta);
 			switch(keyboard_value)
 			{
-				case wifiName:
-					memcpy(uiCfg.wifi_name,ret_ta_txt,sizeof(uiCfg.wifi_name));
-					lv_clear_keyboard();
+                #if USE_WIFI_FUNCTION
+                    case wifiName:
+                        memcpy(uiCfg.wifi_name,ret_ta_txt,sizeof(uiCfg.wifi_name));
+                        lv_clear_keyboard();
+                        draw_return_ui();
+                        break;
+                    case wifiPassWord:
+                        memcpy(uiCfg.wifi_key,ret_ta_txt,sizeof(uiCfg.wifi_name));
+                        lv_clear_keyboard();
+                        draw_return_ui();
+                        break;
+                    case wifiConfig:
+                        memset((void *)uiCfg.wifi_name, 0, sizeof(uiCfg.wifi_name));
+                        memcpy((void *)uiCfg.wifi_name, wifi_list.wifiName[wifi_list.nameIndex], 32);
+
+                        memset((void *)uiCfg.wifi_key, 0, sizeof(uiCfg.wifi_key));
+                        memcpy((void *)uiCfg.wifi_key, ret_ta_txt, sizeof(uiCfg.wifi_key));
+
+                        gCfgItems.wifi_mode_sel = STA_MODEL;
+                        
+                        package_to_wifi(WIFI_PARA_SET, (char *)0, 0);
+
+                        memset(public_buf_l,0,sizeof(public_buf_l));
+                        
+                        public_buf_l[0] = 0xA5;
+                        public_buf_l[1] = 0x09;
+                        public_buf_l[2] = 0x01;
+                        public_buf_l[3] = 0x00;
+                        public_buf_l[4] = 0x01;
+                        public_buf_l[5] = 0xFC;
+                        public_buf_l[6] = 0x00;
+                        raw_send_to_wifi(public_buf_l, 6);
+
+                        last_disp_state = KEY_BOARD_UI;
+                        lv_clear_keyboard();
+                        wifi_tips_type = TIPS_TYPE_JOINING;
+                        lv_draw_wifi_tips();
+                        break;
+                #endif //USE_WIFI_FUNCTION
+                case gcodeCommand:
+                    uint8_t buf[100];
+                    strncpy((char *)buf,ret_ta_txt,sizeof(buf));
+                    update_gcode_command(AUTO_LEVELING_COMMAND_ADDR,buf);
+                    lv_clear_keyboard();
 					draw_return_ui();
-					break;
-				case wifiPassWord:
-					memcpy(uiCfg.wifi_key,ret_ta_txt,sizeof(uiCfg.wifi_name));
-					lv_clear_keyboard();
-					draw_return_ui();
-					break;
-				case wifiConfig:
-					memset((void *)uiCfg.wifi_name, 0, sizeof(uiCfg.wifi_name));
-					memcpy((void *)uiCfg.wifi_name, wifi_list.wifiName[wifi_list.nameIndex], 32);
-
-					memset((void *)uiCfg.wifi_key, 0, sizeof(uiCfg.wifi_key));
-					memcpy((void *)uiCfg.wifi_key, ret_ta_txt, sizeof(uiCfg.wifi_key));
-
-					gCfgItems.wifi_mode_sel = STA_MODEL;
-					
-					package_to_wifi(WIFI_PARA_SET, (char *)0, 0);
-
-					memset(public_buf_l,0,sizeof(public_buf_l));
-					
-					public_buf_l[0] = 0xA5;
-					public_buf_l[1] = 0x09;
-					public_buf_l[2] = 0x01;
-					public_buf_l[3] = 0x00;
-					public_buf_l[4] = 0x01;
-					public_buf_l[5] = 0xFC;
-					public_buf_l[6] = 0x00;
-					raw_send_to_wifi(public_buf_l, 6);
-
-					last_disp_state = KEY_BOARD_UI;
-					lv_clear_keyboard();
-					wifi_tips_type = TIPS_TYPE_JOINING;
-					lv_draw_wifi_tips();
-					break;
+                    break;
 				default:
 					break;
 			}
@@ -240,17 +246,38 @@ void lv_draw_keyboard() {
     lv_kb_set_style(kb, LV_KB_STYLE_BG, &lv_style_transp_tight);
     lv_kb_set_style(kb, LV_KB_STYLE_BTN_REL, &rel_style);
     lv_kb_set_style(kb, LV_KB_STYLE_BTN_PR, &pr_style);
+    #if BUTTONS_EXIST(EN1, EN2, ENC)
+	if (gCfgItems.encoder_enable == true) {
+		//lv_group_add_obj(g, kb);
+        //lv_group_set_editing(g, true);
+	}
+    #endif // BUTTONS_EXIST(EN1, EN2, ENC)
 
     /*Create a text area. The keyboard will write here*/
     lv_obj_t *ta = lv_ta_create(scr, NULL);
     lv_obj_align(ta, NULL, LV_ALIGN_IN_TOP_MID, 0, 10);
-    lv_ta_set_text(ta, "");
+    if(keyboard_value == gcodeCommand) {
+        get_gcode_command(AUTO_LEVELING_COMMAND_ADDR,(uint8_t *)public_buf_m);
+        public_buf_m[sizeof(public_buf_m)-1] = 0;
+        lv_ta_set_text(ta, public_buf_m);
+    }
+    else {
+        lv_ta_set_text(ta, "");
+    }
+    
 
     /*Assign the text area to the keyboard*/
     lv_kb_set_ta(kb, ta);
 }
 
-void lv_clear_keyboard() { lv_obj_del(scr); }
+void lv_clear_keyboard() { 
+	#if BUTTONS_EXIST(EN1, EN2, ENC)
+	if (gCfgItems.encoder_enable == true) {
+		//lv_group_remove_all_objs(g);
+	}
+  	#endif // BUTTONS_EXIST(EN1, EN2, ENC)
+	lv_obj_del(scr); 
+}
 
 
 #endif  // HAS_TFT_LVGL_UI
